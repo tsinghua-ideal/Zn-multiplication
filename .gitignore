@@ -4,6 +4,8 @@ io
 harness/__pycache__
 submission/Cargo.lock
 submission/target
+submission/build
+third_party/
 
 # Virtual environments
 virtualenv
