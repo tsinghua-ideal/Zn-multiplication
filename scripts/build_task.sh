@@ -14,6 +14,9 @@ set -euo pipefail
 ROOT="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )/.." &> /dev/null && pwd )"
 TASK_DIR="submission"
 BUILD="$TASK_DIR/build"
+export CC=$(command -v clang || echo cc)
+export CXX=$(command -v clang++ || echo c++)
+export LD=$(command -v ld.lld || echo ld)
 
 # By default, we assume the OpenFHE library is installed at the the local 
 # directory /third_party/openfhe (the default location in get_openfhe.sh).

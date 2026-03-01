@@ -21,6 +21,9 @@ ROOT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )/.." &> /dev/null && pwd 
 SRC_DIR="$ROOT_DIR/third_party/openfhe-src"          # git clone here
 INSTALL_DIR="$ROOT_DIR/third_party/openfhe"          # cmake --install here
 NPROC=$(nproc 2>/dev/null || sysctl -n hw.ncpu || echo 4)
+export CC=$(command -v clang || echo cc)
+export CXX=$(command -v clang++ || echo c++)
+export LD=$(command -v ld.lld || echo ld)
 # ----------------------------------------------------------------------
 
 FORCE=0
