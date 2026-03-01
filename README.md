@@ -1,4 +1,23 @@
+# FHE Benchmarking Suite - 64-bits multiplication in GZ26 Scheme
+
+This is a submission for the FHE benchmarking suite using the GZ26 scheme descripted in the paper [FHE for SIMD Arithmetic Logic Units with Amortized O(1) Bootstrapping per Ciphertext](https://eprint.iacr.org/2026/233) which is especially suitable for SIMD execution of int64 arithmetic and boolean operations.
+
+The scheme supports *leveled* arithmetic with exact correctness. Given the task is one level of multiplication, this submission instantiates the GZ26 scheme in a *leveled* manner (i.e., not fully), with ring dimension of `2 ** 14` and four 43-bit primes in the moduli chain. Together with the auxiliary moduli, this satisfies 128-bit security. The only evaluation key is the relinearization key.
+
+To run the harness, please make sure `scripts/get_openfhe.sh` is run first.
+
+## Installation
+
+We enable OpenMP, NTL, tcmalloc and HEXL in OpenFHE.
+
+```
+sudo apt install build-essential git libntl-dev libgmp-dev cmake autoconf libtool clang libomp5 libomp-dev
+```
+
+Using `clang` is recommended but not mandatory.
+
 # FHE Benchmarking Suite - 64-bits multiplication
+
 This repository contains the harness for the 64-bits multiplication workload of the FHE benchmarking suite of [HomomorphicEncryption.org](https://www.HomomorphicEncryption.org).
 The harness currently supports ‘half’ multiplication with a 64-bits output.
 The `main` branch contains a reference implementation of this workload, under the `submission` subdirectory.
@@ -11,6 +30,7 @@ They also may need to changes or replace the script `scripts/build_task.sh` to a
 The 64-bits workload currently only support local execution mode:
 
 All steps are executed on a single machine:
+
 - Cryptographic context setup
 - Key generation
 - Input preprocessing and encryption
@@ -20,11 +40,14 @@ All steps are executed on a single machine:
 ## Running the 64-bits multiplication workload
 
 #### Dependencies
+
 - Python 3.12+
-- The build environment for local execution depends on the Rust toolchain being installed. See https://rust-lang.org/tools/install/ .
+- The build environment for local execution depends on the Rust toolchain being installed. See <https://rust-lang.org/tools/install/> .
 
 #### Execution
+
 To run the workload, clone and install dependencies:
+
 ```console
 git clone https://github.com/fhe-benchmarking/Zn-multiplication.git
 cd Zn-multiplication
@@ -37,7 +60,6 @@ python3 harness/run_submission.py -h  # Information about command-line options
 ```
 
 The harness script `harness/run_submission.py` will attempt to build the submission itself, downloading required Rust crates, if it is not already built. If already built, it will use the same project without re-building it (unless the code has changed). An example run is provided below.
-
 
 ```console
 $ python3 harness/run_submission.py -h
@@ -90,6 +112,7 @@ All steps completed for the single dataset!
 ```
 
 After finishing the run, deactivate the virtual environment.
+
 ```console
 deactivate
 ```
@@ -97,6 +120,7 @@ deactivate
 ## Directory structure
 
 The directory structure of this reposiroty is as follows:
+
 ```
 ├─ README.md     # This file
 ├─ LICENSE.md    # Harness software license (Apache v2)
@@ -116,14 +140,15 @@ The directory structure of this reposiroty is as follows:
     ├─ LICENSE.md  # Optional software license (if different from Apache v2)
     └─ [...]
 ```
+
 Submitters must overwrite the contents of the `scripts` and `submissions`
 subdirectories.
 
 ## Description of stages
 
-A submitter can edit any of the files in `/submission`. 
+A submitter can edit any of the files in `/submission`.
 Moreover, for the particular parameters related to a workload, the submitter can modify the `harness/params.py` files.
-If the current description of the files are inaccurate, the stage names in `harness/run_submission.py` can be also 
+If the current description of the files are inaccurate, the stage names in `harness/run_submission.py` can be also
 modified.
 
 The order in which they are happening in `run_submission` assumes an initialization step which run only once, and potentially multiple runs for the multiplication.
@@ -131,18 +156,16 @@ Each file can take as argument the test case size.
 
 ***
 
-
 | Stage executables                | Description |
 |----------------------------------|-------------|
-| `client_key_generation`          | Generate all key material and cryptographic context.           
+| `client_key_generation`          | Generate all key material and cryptographic context.
 | `client_preprocess_input`        | (Optional) Any in the clear computations the client wants to apply over the input.
 | `client_encode_encrypt_input`    | Plaintext encoding and encryption of the input.
 | `server_encrypted_compute`       | The computation the server applies to achieve the workload solution over encrypted data.
 | `client_decrypt_decode`          | Decryption and plaintext decoding of the result at the client.
 | `client_postprocess`             | Any in the clear computation that the client wants to apply on the decrypted result.
 
-
 The outer python script measures the runtime of each stage.
 The current stage separation structure requires reading and writing to files more times than minimally necessary.
 For a more granular runtime measuring, which would account for the extra overhead described above, we encourage
-submitters to separate and print in a log the individual times for reads/writes and computations inside each stage. 
+submitters to separate and print in a log the individual times for reads/writes and computations inside each stage.

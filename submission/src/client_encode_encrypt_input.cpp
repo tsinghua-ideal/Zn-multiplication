@@ -88,20 +88,20 @@ int main(int argc, char *argv[]) {
   PKEZ pkeZ = std::make_shared<PKEZImpl>(pk);
 
   for (size_t i = 0; i < numCts; i++) {
-    std::vector<BigInteger> lhsBig, rhsBig;
+    std::vector<uint64_t> lhsInner(zSlots), rhsInner(zSlots);
 
     auto startIdx = i * zSlots;
     auto endIdx = std::min(startIdx + zSlots, static_cast<size_t>(vecSize));
 
     for (size_t j = startIdx; j < endIdx; j++) {
-      lhsBig.push_back(BigInteger(lhs[j]));
-      rhsBig.push_back(BigInteger(rhs[j]));
+      lhsInner[j - startIdx] = lhs[j];
+      rhsInner[j - startIdx] = rhs[j];
     }
 
     auto ptxt1 =
-        ZEncodingImpl::encodeArith(lhsBig, zN, zSlots, elemParam, sfq0);
+        ZEncodingImpl::encodeArith(lhsInner, zN, zSlots, elemParam, sfq0);
     auto ptxt2 =
-        ZEncodingImpl::encodeArith(rhsBig, zN, zSlots, elemParam, sfq0);
+        ZEncodingImpl::encodeArith(rhsInner, zN, zSlots, elemParam, sfq0);
 
     auto ctLHS = pkeZ->Encrypt(ptxt1);
     auto ctRHS = pkeZ->Encrypt(ptxt2);
