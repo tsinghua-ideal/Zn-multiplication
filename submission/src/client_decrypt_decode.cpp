@@ -37,30 +37,47 @@ int main(int argc, char *argv[]) {
   auto size = static_cast<InstanceSize>(instance_size_from_name(argv[1]));
   InstanceParams prms(size);
 
-  // Read the encrypted answer from disk
-  Ciphertext<DCRTPoly> eres;
-  auto res_file = prms.downloaddir() / "results.bin";
-  if (!Serial::DeserializeFromFile(res_file, eres, SerType::BINARY)) {
-    throw std::runtime_error("failed to read answer from " + res_file.string());
-  }
-
   // Read the secret keys from disk and decrypt
   Plaintext pt;
   auto sk = read_key(prms);
 
-  auto zN = 64;
+  auto vecSize = prms.getVecSize();
+  auto zSlots = prms.getZSlots();
+  size_t numCts = (vecSize + zSlots - 1) / zSlots;
+
+  if (vecSize == 1) {
+    zSlots = 1; // for the single instance, we only have one value, so we can
+                // set zSlots to 1 to avoid unnecessary padding
+  }
+
+  auto zN = prms.getZN();
   ZLinearTransform::Initialize(zN);
-  DiscreteFourierTransform::Initialize(zN * 2, zN / 2);
+  DiscreteFourierTransform::Initialize(zN * zSlots * 2, zN * zSlots / 2);
 
   LeveledZ z = std::make_shared<LeveledZImpl>();
   UserZ u = std::make_shared<UserZImpl>(z);
   PKEZ pkeZ = std::make_shared<PKEZImpl>(sk);
 
-  auto decResult = pkeZ->Decrypt(eres);
-  std::vector<uint64_t> decoded(decResult.size());
-  for (size_t i = 0; i < decResult.size(); i++) {
-    decoded[i] = decResult[i].ConvertToInt();
+  std::vector<uint64_t> decoded(prms.getVecSize());
+
+  for (size_t i = 0; i != numCts; i++) {
+    // Read the encrypted answer from disk
+    Ciphertext<DCRTPoly> ct;
+    auto res_file = prms.downloaddir() /
+                    (std::string("result-") + std::to_string(i) + ".bin");
+    if (!Serial::DeserializeFromFile(res_file, ct, SerType::BINARY)) {
+      throw std::runtime_error("failed to read answer from " +
+                               res_file.string());
+    }
+    auto pt = pkeZ->Decrypt(ct);
+    for (size_t j = 0; j < pt.size(); j++) {
+      auto idx = i * zSlots + j;
+      if (idx < decoded.size()) {
+        decoded[idx] = pt[j].ConvertToInt();
+      }
+    }
   }
+
   std::filesystem::create_directories(prms.outputdir());
   write2disk(prms.outputdir() / "out.txt", decoded);
   return 0;

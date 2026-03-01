@@ -52,26 +52,6 @@ void log_step(int num, std::string name) {
   std::cout << std::endl;
 }
 
-#ifdef DEBUG
-static void printCts(const std::vector<Ciphertext<DCRTPoly>> &cts,
-                     std::string label) {
-  std::cout << label << "[";
-  for (auto &ct : cts) {
-    Plaintext pt;
-    sk->GetCryptoContext()->Decrypt(sk, ct, &pt);
-    std::vector<double> slots = pt->GetRealPackedValue();
-    std::cout << label << " [";
-    for (auto x : slots) {
-      if (std::abs(x) < 0.1) {
-        std::cout << "0 ";
-      } else {
-        printf("%.1f ", x);
-      }
-    }
-    std::cout << ']' << std::endl;
-  }
-}
-#endif
 /*******************************************************************/
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -98,13 +78,6 @@ int main(int argc, char *argv[]) {
     throw std::runtime_error("Failed to get public key from " +
                              prms.publickeydir().string());
   }
-#ifdef DEBUG // Read also the secret key for debugging
-  if (!Serial::DeserializeFromFile(prms.keydir() / "sk.bin", sk,
-                                   SerType::BINARY)) {
-    throw std::runtime_error("Failed to get secret key from " +
-                             prms.keydir().string());
-  }
-#endif
 
   std::ifstream emult_file(prms.publickeydir() / "mk.bin",
                            std::ios::in | std::ios::binary);
@@ -122,37 +95,62 @@ int main(int argc, char *argv[]) {
   //                            prms.keydir().string());
   // }
 
-  // Read lhs and rhs from disk
-  auto lhs_name = prms.uploaddir() / "lhs.bin";
-  Ciphertext<DCRTPoly> lhs;
-  if (!Serial::DeserializeFromFile(lhs_name, lhs, SerType::BINARY)) {
-    throw std::runtime_error("failed to read query ciphertext from " +
-                             lhs_name.string());
+  auto vecSize = prms.getVecSize();
+  auto zSlots = prms.getZSlots();
+  size_t numCts = (vecSize + zSlots - 1) / zSlots;
+
+  if (vecSize == 1) {
+    zSlots = 1; // for the single instance, we only have one value, so we can
+                // set zSlots to 1 to avoid unnecessary padding
   }
-  auto rhs_name = prms.uploaddir() / "rhs.bin";
-  Ciphertext<DCRTPoly> rhs;
-  if (!Serial::DeserializeFromFile(rhs_name, rhs, SerType::BINARY)) {
-    throw std::runtime_error("failed to read query ciphertext from " +
-                             rhs_name.string());
-  }
-  log_step(0, "Loading keys");
 
-  auto start_computing = std::chrono::system_clock::now();
-
-  log_step(1, "Performing homomorphic multiplication");
-
-  auto zN = 64;
+  auto zN = prms.getZN();
   ZLinearTransform::Initialize(zN);
+  // Server: for MultFull, we also need to initialize for (zN * 2, zN / 2)
   DiscreteFourierTransform::Initialize(zN * 2, zN / 2);
+  DiscreteFourierTransform::Initialize(zN * zSlots * 2, zN * zSlots / 2);
 
   LeveledZ z = std::make_shared<LeveledZImpl>();
   UserZ u = std::make_shared<UserZImpl>(z);
 
-  auto ctRes = u->EvalMultFullInZ(lhs, rhs);
+  log_step(0, "Loading keys");
 
-#ifdef DEBUG
-  printCts({result[0]}, " summed match vector:");
-#endif
+  std::vector<Ciphertext<DCRTPoly>> lhsCts(numCts), rhsCts(numCts);
+  for (size_t i = 0; i < numCts; i++) {
+    auto lhs_name =
+        prms.uploaddir() / (std::string("lhs-") + std::to_string(i) + ".bin");
+
+    // Read lhs and rhs from disk
+    Ciphertext<DCRTPoly> lhs;
+    if (!Serial::DeserializeFromFile(lhs_name, lhs, SerType::BINARY)) {
+      throw std::runtime_error("failed to read query ciphertext from " +
+                               lhs_name.string());
+    }
+    auto rhs_name =
+        prms.uploaddir() / (std::string("rhs-") + std::to_string(i) + ".bin");
+    Ciphertext<DCRTPoly> rhs;
+    if (!Serial::DeserializeFromFile(rhs_name, rhs, SerType::BINARY)) {
+      throw std::runtime_error("failed to read query ciphertext from " +
+                               rhs_name.string());
+    }
+    lhsCts[i] = lhs;
+    rhsCts[i] = rhs;
+  }
+
+  log_step(1, "Loading input ciphertexts");
+
+  auto start_computing = std::chrono::system_clock::now();
+
+  std::vector<Ciphertext<DCRTPoly>> result(numCts);
+  for (size_t i = 0; i < numCts; i++) {
+    auto lhs = lhsCts[i];
+    auto rhs = rhsCts[i];
+    auto ctRes = u->EvalMultFullInZ(lhs, rhs);
+    result[i] = ctRes;
+  }
+
+  log_step(2, "Performing homomorphic multiplication");
+
   auto now = std::chrono::system_clock::now();
   int64_t comp_s =
       std::chrono::duration_cast<std::chrono::seconds>(now - start_computing)
@@ -162,11 +160,19 @@ int main(int argc, char *argv[]) {
           .count();
   store_server_time(timing_fname, comp_s, total_s);
 
-  std::string out_fname = prms.downloaddir() / "results.bin";
   std::filesystem::create_directories(prms.downloaddir());
-  if (!Serial::SerializeToFile(out_fname, ctRes, SerType::BINARY)) {
-    throw std::runtime_error("Failed to write ciphertext to " + out_fname);
+
+  for (size_t i = 0; i < numCts; i++) {
+    auto ctRes = result[i];
+    std::string out_fname = prms.downloaddir() / (std::string("result-") +
+                                                  std::to_string(i) + ".bin");
+    if (!Serial::SerializeToFile(out_fname, ctRes, SerType::BINARY)) {
+      throw std::runtime_error("Failed to write ciphertext to " + out_fname);
+    }
   }
+
+  log_step(3, "Writing results to disk");
+
   return 0;
 }
 /*******************************************************************/

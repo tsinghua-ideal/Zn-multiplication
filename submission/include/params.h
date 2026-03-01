@@ -58,7 +58,8 @@ public:
   // an object is constrcuted these parameters cannot be modified.
   const InstanceSize getSize() const { return size; }
   int getRingDim() const { return ringDim; }
-  int getZSlots() const { return ringDim / 64; }
+  int getZN() const { return 64; }
+  int getZSlots() const { return ringDim / getZN(); }
   int getVecSize() const { return vecSize; }
 
   // Directory structure: each submission to the fetch-by-similarity

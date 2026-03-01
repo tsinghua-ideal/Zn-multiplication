@@ -66,43 +66,59 @@ int main(int argc, char *argv[]) {
   }
   const auto cryptoParams = std::dynamic_pointer_cast<CryptoParametersCKKSRNS>(
       cc->GetCryptoParameters());
-
-  auto zSlots = 1;
   auto elemParam = cc->GetCryptoParameters()->GetElementParams();
   auto sfq0 = cryptoParams->GetScalingFactorBFP(0);
 
-  auto zN = 64;
+  auto vecSize = prms.getVecSize();
+  auto zSlots = prms.getZSlots();
+  size_t numCts = (vecSize + zSlots - 1) / zSlots;
+
+  if (vecSize == 1) {
+    zSlots = 1; // for the single instance, we only have one value, so we can
+                // set zSlots to 1 to avoid unnecessary padding
+  }
+
+  auto zN = prms.getZN();
   ZLinearTransform::Initialize(zN);
-  DiscreteFourierTransform::Initialize(zN * 2, zN / 2);
+  // Server: for MultFull, we also need to initialize for (zN * 2, zN / 2)
+  DiscreteFourierTransform::Initialize(zN * zSlots * 2, zN * zSlots / 2);
 
   LeveledZ z = std::make_shared<LeveledZImpl>();
   UserZ u = std::make_shared<UserZImpl>(z);
   PKEZ pkeZ = std::make_shared<PKEZImpl>(pk);
 
-  std::vector<BigInteger> lhsBig, rhsBig;
-  for (const auto &v : lhs) {
-    lhsBig.push_back(BigInteger(v));
-  }
-  for (const auto &v : rhs) {
-    rhsBig.push_back(BigInteger(v));
-  }
+  for (size_t i = 0; i < numCts; i++) {
+    std::vector<BigInteger> lhsBig, rhsBig;
 
-  auto ptxt1 = ZEncodingImpl::encodeArith(lhsBig, 64, zSlots, elemParam, sfq0);
-  auto ptxt2 = ZEncodingImpl::encodeArith(rhsBig, 64, zSlots, elemParam, sfq0);
+    auto startIdx = i * zSlots;
+    auto endIdx = std::min(startIdx + zSlots, static_cast<size_t>(vecSize));
 
-  auto ct = pkeZ->Encrypt(ptxt1);
-  auto ct2 = pkeZ->Encrypt(ptxt2);
+    for (size_t j = startIdx; j < endIdx; j++) {
+      lhsBig.push_back(BigInteger(lhs[j]));
+      rhsBig.push_back(BigInteger(rhs[j]));
+    }
 
-  auto dir = prms.uploaddir();
-  std::filesystem::create_directories(dir);
+    auto ptxt1 =
+        ZEncodingImpl::encodeArith(lhsBig, zN, zSlots, elemParam, sfq0);
+    auto ptxt2 =
+        ZEncodingImpl::encodeArith(rhsBig, zN, zSlots, elemParam, sfq0);
 
-  auto lhs_ct_fname = dir / "lhs.bin";
-  if (!Serial::SerializeToFile(lhs_ct_fname, ct, SerType::BINARY)) {
-    throw std::runtime_error("failed to write file " + lhs_ct_fname.string());
-  }
-  auto rhs_ct_fname = dir / "rhs.bin";
-  if (!Serial::SerializeToFile(rhs_ct_fname, ct2, SerType::BINARY)) {
-    throw std::runtime_error("failed to write file " + rhs_ct_fname.string());
+    auto ctLHS = pkeZ->Encrypt(ptxt1);
+    auto ctRHS = pkeZ->Encrypt(ptxt2);
+
+    auto dir = prms.uploaddir();
+    std::filesystem::create_directories(dir);
+
+    auto lhs_ct_fname =
+        dir / (std::string("lhs-") + std::to_string(i) + ".bin");
+    if (!Serial::SerializeToFile(lhs_ct_fname, ctLHS, SerType::BINARY)) {
+      throw std::runtime_error("failed to write file " + lhs_ct_fname.string());
+    }
+    auto rhs_ct_fname =
+        dir / (std::string("rhs-") + std::to_string(i) + ".bin");
+    if (!Serial::SerializeToFile(rhs_ct_fname, ctRHS, SerType::BINARY)) {
+      throw std::runtime_error("failed to write file " + rhs_ct_fname.string());
+    }
   }
   return 0;
 }
