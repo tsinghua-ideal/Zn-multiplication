@@ -9,6 +9,9 @@ set(CMAKE_CXX_STANDARD 17)
 # add_compile_options(-O3 -Wall -Wextra -Wno-unused-parameter)
 option( BUILD_STATIC "Set to ON to include static versions of the library" OFF)
 
+message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
+message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
+
 # --------------------------------------------------------------------
 # 2.  Find the OpenFHE *package* that the install script put into
 #     third_party/openfhe

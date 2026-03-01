@@ -16,7 +16,6 @@ TASK_DIR="submission"
 BUILD="$TASK_DIR/build"
 export CC=$(command -v clang || echo cc)
 export CXX=$(command -v clang++ || echo c++)
-export LD=$(command -v ld.lld || echo ld)
 
 # By default, we assume the OpenFHE library is installed at the the local 
 # directory /third_party/openfhe (the default location in get_openfhe.sh).
@@ -24,7 +23,10 @@ export LD=$(command -v ld.lld || echo ld)
 # accordingly.
 cmake -S "$TASK_DIR" -B "$BUILD" \
       -DCMAKE_PREFIX_PATH="$ROOT/third_party/openfhe" \
-      -DCMAKE_EXPORT_COMPILE_COMMANDS=1
+      -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_C_COMPILER="$CC" \
+      -DCMAKE_CXX_COMPILER="$CXX"
 cd "$TASK_DIR/build"
 make -j
 

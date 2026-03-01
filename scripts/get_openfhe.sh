@@ -23,7 +23,6 @@ INSTALL_DIR="$ROOT_DIR/third_party/openfhe"          # cmake --install here
 NPROC=$(nproc 2>/dev/null || sysctl -n hw.ncpu || echo 4)
 export CC=$(command -v clang || echo cc)
 export CXX=$(command -v clang++ || echo c++)
-export LD=$(command -v ld.lld || echo ld)
 # ----------------------------------------------------------------------
 
 FORCE=0
@@ -72,7 +71,9 @@ cmake -S "$SRC_DIR" -B "$SRC_DIR/build" \
       -DWITH_TCM=ON \
       -DWITH_OPENMP=ON \
       -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_EXPORT_COMPILE_COMMANDS=1
+      -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
+      -DCMAKE_C_COMPILER="$CC" \
+      -DCMAKE_CXX_COMPILER="$CXX"
 
 echo "[get_openfhe] Building…"
 cd "$SRC_DIR/build"
