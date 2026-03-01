@@ -20,6 +20,7 @@ BUILD="$TASK_DIR/build"
 # If you want to use a different location, set the CMAKE_PREFIX_PATH variable
 # accordingly.
 cmake -S "$TASK_DIR" -B "$BUILD" \
-      -DCMAKE_PREFIX_PATH="$ROOT/third_party/openfhe"
+      -DCMAKE_PREFIX_PATH="$ROOT/third_party/openfhe" \
+      -DCMAKE_EXPORT_COMPILE_COMMANDS=1
 cd "$TASK_DIR/build"
 make -j

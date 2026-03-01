@@ -68,7 +68,8 @@ cmake -S "$SRC_DIR" -B "$SRC_DIR/build" \
       -DWITH_NTL=ON \
       -DWITH_TCM=ON \
       -DWITH_OPENMP=ON \
-      -DCMAKE_BUILD_TYPE=Release
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_EXPORT_COMPILE_COMMANDS=1
 
 echo "[get_openfhe] Building…"
 cd "$SRC_DIR/build"
@@ -76,6 +77,10 @@ make -j tcm
 make -j"$NPROC"
 
 echo "[get_openfhe] Installing to $INSTALL_DIR"
-make install 
+make install
+
+cd $INSTALL_DIR/lib
+ln -sf libtcmalloc_minimal.a libtcmalloc.a
+ln -sf libtcmalloc_minimal.so libtcmalloc.so
 
 echo "[get_openfhe] Done."
