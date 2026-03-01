@@ -69,11 +69,11 @@ int main(int argc, char *argv[]) {
       throw std::runtime_error("failed to read answer from " +
                                res_file.string());
     }
-    auto pt = pkeZ->Decrypt(ct);
+    auto pt = pkeZ->DecryptSmallFast(ct);
     for (size_t j = 0; j < pt.size(); j++) {
       auto idx = i * zSlots + j;
       if (idx < decoded.size()) {
-        decoded[idx] = pt[j].ConvertToInt();
+        decoded[idx] = pt[j];
       }
     }
   }
