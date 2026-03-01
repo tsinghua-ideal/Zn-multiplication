@@ -7,12 +7,12 @@
 # See the LICENSE.md file for details.
 
 # ------------------------------------------------------------
-# Usage: ./scripts/build_task.sh <submission-directory>
+# Usage: ./scripts/build_task.sh
 # Compiles the files in the source directory.
 # ------------------------------------------------------------
 set -euo pipefail
 ROOT="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )/.." &> /dev/null && pwd )"
-TASK_DIR="$1"
+TASK_DIR="submission"
 BUILD="$TASK_DIR/build"
 
 # By default, we assume the OpenFHE library is installed at the the local 
@@ -24,3 +24,8 @@ cmake -S "$TASK_DIR" -B "$BUILD" \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=1
 cd "$TASK_DIR/build"
 make -j
+
+# now make it compatible with harness
+cd ../..
+mkdir -p "$TASK_DIR/target/release"
+cp "$BUILD"/client_* "$BUILD"/server_* "$TASK_DIR/target/release/"

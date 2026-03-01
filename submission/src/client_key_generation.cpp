@@ -23,12 +23,12 @@ using namespace lbcrypto;
 KeyPair<DCRTPoly> key_gen(const InstanceParams &prms);
 
 int main(int argc, char *argv[]) {
-  if (argc < 2 || !std::isdigit(argv[1][0])) {
-    std::cout << "Usage: " << argv[0] << " instance-size [--count_only]\n";
-    std::cout << "  Instance-size: 0-TOY, 1-SMALL, 2-MEDIUM, 3-LARGE\n";
+  if (argc < 2) {
+    std::cout << "Usage: " << argv[0] << " instance-size\n";
+    std::cout << "  Instance-size: single, small, medium, large\n";
     return 0;
   }
-  auto size = static_cast<InstanceSize>(std::stoi(argv[1]));
+  auto size = static_cast<InstanceSize>(instance_size_from_name(argv[1]));
   InstanceParams prms(size);
 
   // Generate fresh keys
@@ -36,24 +36,27 @@ int main(int argc, char *argv[]) {
   auto cc = keys.publicKey->GetCryptoContext();
 
   // Store context and keys to disk
-  std::filesystem::create_directory(prms.keydir(), prms.rtdir());
-  if (!Serial::SerializeToFile(prms.keydir() / "cc.bin", cc, SerType::BINARY) ||
-      !Serial::SerializeToFile(prms.keydir() / "pk.bin", keys.publicKey,
+  std::filesystem::create_directory(prms.secretkeydir(), prms.rtdir());
+  std::filesystem::create_directory(prms.publickeydir(), prms.rtdir());
+  if (!Serial::SerializeToFile(prms.publickeydir() / "cc.bin", cc,
                                SerType::BINARY) ||
-      !Serial::SerializeToFile(prms.keydir() / "sk.bin", keys.secretKey,
+      !Serial::SerializeToFile(prms.publickeydir() / "pk.bin", keys.publicKey,
+                               SerType::BINARY) ||
+      !Serial::SerializeToFile(prms.secretkeydir() / "sk.bin", keys.secretKey,
                                SerType::BINARY)) {
     throw std::runtime_error("Failed to write keys to " +
-                             prms.keydir().string());
+                             prms.publickeydir().string());
   }
-  std::ofstream emult_file(prms.keydir() / "mk.bin",
+  std::ofstream emult_file(prms.publickeydir() / "mk.bin",
                            std::ios::out | std::ios::binary);
-  std::ofstream erot_file(prms.keydir() / "rk.bin",
-                          std::ios::out | std::ios::binary);
-  if (!emult_file.is_open() || !erot_file.is_open() ||
-      !cc->SerializeEvalMultKey(emult_file, SerType::BINARY) ||
-      !cc->SerializeEvalAutomorphismKey(erot_file, SerType::BINARY)) {
+  // std::ofstream erot_file(prms.publickeydir() / "rk.bin",
+  //                         std::ios::out | std::ios::binary);
+  if (!emult_file.is_open() ||
+      // !erot_file.is_open() ||
+      !cc->SerializeEvalMultKey(emult_file, SerType::BINARY)) {
+    //! cc->SerializeEvalAutomorphismKey(erot_file, SerType::BINARY)) {
     throw std::runtime_error("Failed to write eval keys to " +
-                             prms.keydir().string());
+                             prms.publickeydir().string());
   }
   return 0;
 }
@@ -66,12 +69,8 @@ KeyPair<DCRTPoly> key_gen(const InstanceParams &prms) {
   cParams.SetKeySwitchTechnique(HYBRID);
   // Two level for Mult, 1 level for extra spaces for overflow.
   cParams.SetMultiplicativeDepth(3);
-  if (prms.getSize() == InstanceSize::TOY) {
-    cParams.SetSecurityLevel(HEStd_NotSet);
-    cParams.SetRingDim(1 << 10);
-  } else {
-    cParams.SetSecurityLevel(HEStd_128_classic);
-  }
+  cParams.SetRingDim(prms.getRingDim());
+  cParams.SetSecurityLevel(HEStd_128_classic);
   cParams.SetScalingTechnique(FLEXIBLEMANUAL);
   cParams.SetScalingModSize(43);
   cParams.SetFirstModSize(43);

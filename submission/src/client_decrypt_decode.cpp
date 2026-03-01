@@ -31,10 +31,10 @@ PrivateKey<DCRTPoly> read_key(InstanceParams prms);
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     std::cout << "Usage: " << argv[0] << " instance-size\n";
-    std::cout << "  Instance-size: 0-TOY, 1-SMALL, 2-MEDIUM, 3-LARGE\n";
+    std::cout << "  Instance-size: single, small, medium, large\n";
     return 0;
   }
-  auto size = static_cast<InstanceSize>(std::stoi(argv[1]));
+  auto size = static_cast<InstanceSize>(instance_size_from_name(argv[1]));
   InstanceParams prms(size);
 
   // Read the encrypted answer from disk
@@ -69,16 +69,16 @@ int main(int argc, char *argv[]) {
 // Read public encryption key from disk
 PrivateKey<DCRTPoly> read_key(InstanceParams prms) {
   CryptoContext<DCRTPoly> cc;
-  if (!Serial::DeserializeFromFile(prms.keydir() / "cc.bin", cc,
+  if (!Serial::DeserializeFromFile(prms.publickeydir() / "cc.bin", cc,
                                    SerType::BINARY)) {
     throw std::runtime_error("Failed to get CryptoContext from " +
-                             prms.keydir().string());
+                             prms.publickeydir().string());
   }
   PrivateKey<DCRTPoly> sk;
-  if (!Serial::DeserializeFromFile(prms.keydir() / "sk.bin", sk,
+  if (!Serial::DeserializeFromFile(prms.secretkeydir() / "sk.bin", sk,
                                    SerType::BINARY)) {
     throw std::runtime_error("Failed to get secret key from " +
-                             prms.keydir().string());
+                             prms.secretkeydir().string());
   }
   return sk;
 }

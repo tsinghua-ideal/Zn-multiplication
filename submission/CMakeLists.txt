@@ -84,6 +84,8 @@ endif()
 # 4.  Each *.cpp file becomes its own executable.
 #     The eight stage names are hard-wired by the benchmark contract.
 # --------------------------------------------------------------------
+
+add_executable( client_preprocess_input src/unused.cpp )
  
 add_executable( client_key_generation src/client_key_generation.cpp )
 
@@ -91,6 +93,6 @@ add_executable( client_encode_encrypt_input src/client_encode_encrypt_input.cpp 
 
 add_executable( client_decrypt_decode src/client_decrypt_decode.cpp )
 
-#add_executable( client_postprocess src/client_postprocess.cpp )
+add_executable( client_postprocess src/unused.cpp )
 
 add_executable( server_encrypted_compute src/server_encrypted_compute.cpp )

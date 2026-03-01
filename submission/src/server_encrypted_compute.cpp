@@ -74,12 +74,12 @@ static void printCts(const std::vector<Ciphertext<DCRTPoly>> &cts,
 #endif
 /*******************************************************************/
 int main(int argc, char *argv[]) {
-  if (argc < 2 || !std::isdigit(argv[1][0])) {
-    std::cout << "Usage: " << argv[0] << " instance-size [--count_only]\n";
-    std::cout << "  Instance-size: 0-TOY, 1-SMALL, 2-MEDIUM, 3-LARGE\n";
+  if (argc < 2) {
+    std::cout << "Usage: " << argv[0] << " instance-size\n";
+    std::cout << "  Instance-size: single, small, medium, large\n";
     return 0;
   }
-  auto size = static_cast<InstanceSize>(std::stoi(argv[1]));
+  auto size = static_cast<InstanceSize>(instance_size_from_name(argv[1]));
 
   InstanceParams prms(size);
   auto timing_fname = prms.iodir() / "server_reported_steps.json";
@@ -87,16 +87,16 @@ int main(int argc, char *argv[]) {
 
   // Read the crypto context and the public key from disk
   CryptoContext<DCRTPoly> cc;
-  if (!Serial::DeserializeFromFile(prms.keydir() / "cc.bin", cc,
+  if (!Serial::DeserializeFromFile(prms.publickeydir() / "cc.bin", cc,
                                    SerType::BINARY)) {
     throw std::runtime_error("Failed to get CryptoContext from " +
-                             prms.keydir().string());
+                             prms.publickeydir().string());
   }
   PublicKey<DCRTPoly> pk;
-  if (!Serial::DeserializeFromFile(prms.keydir() / "pk.bin", pk,
+  if (!Serial::DeserializeFromFile(prms.publickeydir() / "pk.bin", pk,
                                    SerType::BINARY)) {
     throw std::runtime_error("Failed to get public key from " +
-                             prms.keydir().string());
+                             prms.publickeydir().string());
   }
 #ifdef DEBUG // Read also the secret key for debugging
   if (!Serial::DeserializeFromFile(prms.keydir() / "sk.bin", sk,
@@ -106,30 +106,30 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
-  std::ifstream emult_file(prms.keydir() / "mk.bin",
+  std::ifstream emult_file(prms.publickeydir() / "mk.bin",
                            std::ios::in | std::ios::binary);
   if (!emult_file.is_open() ||
       !cc->DeserializeEvalMultKey(emult_file, SerType::BINARY)) {
     throw std::runtime_error("Failed to get re-linearization key from " +
-                             prms.keydir().string());
+                             prms.publickeydir().string());
   }
 
-  std::ifstream erot_file(prms.keydir() / "rk.bin",
-                          std::ios::in | std::ios::binary);
-  if (!erot_file.is_open() ||
-      !cc->DeserializeEvalAutomorphismKey(erot_file, SerType::BINARY)) {
-    throw std::runtime_error("Failed to get rotation keys from " +
-                             prms.keydir().string());
-  }
+  // std::ifstream erot_file(prms.keydir() / "rk.bin",
+  //                         std::ios::in | std::ios::binary);
+  // if (!erot_file.is_open() ||
+  //     !cc->DeserializeEvalAutomorphismKey(erot_file, SerType::BINARY)) {
+  //   throw std::runtime_error("Failed to get rotation keys from " +
+  //                            prms.keydir().string());
+  // }
 
   // Read lhs and rhs from disk
-  auto lhs_name = prms.encdir() / "lhs.bin";
+  auto lhs_name = prms.uploaddir() / "lhs.bin";
   Ciphertext<DCRTPoly> lhs;
   if (!Serial::DeserializeFromFile(lhs_name, lhs, SerType::BINARY)) {
     throw std::runtime_error("failed to read query ciphertext from " +
                              lhs_name.string());
   }
-  auto rhs_name = prms.encdir() / "rhs.bin";
+  auto rhs_name = prms.uploaddir() / "rhs.bin";
   Ciphertext<DCRTPoly> rhs;
   if (!Serial::DeserializeFromFile(rhs_name, rhs, SerType::BINARY)) {
     throw std::runtime_error("failed to read query ciphertext from " +

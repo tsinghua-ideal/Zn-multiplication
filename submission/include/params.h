@@ -15,13 +15,21 @@
 namespace fs = std::filesystem;
 
 // an enum for benchmark size
-enum InstanceSize { TOY = 0, SMALL = 1, MEDIUM = 2, LARGE = 3 };
+enum InstanceSize { SINGLE = 0, SMALL = 1, MEDIUM = 2, LARGE = 3 };
 inline std::string instance_name(const InstanceSize size) {
   if (unsigned(size) > unsigned(InstanceSize::LARGE)) {
     return "unknown";
   }
-  static const std::string names[] = {"toy", "small", "medium", "large"};
+  static const std::string names[] = {"single", "small", "medium", "large"};
   return names[int(size)];
+}
+inline InstanceSize instance_size_from_name(const std::string &name) {
+  for (int i = 0; i <= int(InstanceSize::LARGE); i++) {
+    if (name == instance_name(static_cast<InstanceSize>(i))) {
+      return static_cast<InstanceSize>(i);
+    }
+  }
+  throw std::invalid_argument("Invalid instance name: " + name);
 }
 
 // Parameters that differ for different instance sizes
@@ -39,10 +47,10 @@ public:
     if (unsigned(_size) > unsigned(InstanceSize::LARGE)) {
       throw std::invalid_argument("Invalid instance size");
     }
-    // parameters for sizes:       toy  small   medium      large
-    static const int vecSizes[] = {1, 1, 1000000, 20000000}; // TODO: fix it
+    // parameters for sizes:       single  small   medium      large
+    static const int vecSizes[] = {1, 1000, 100000, 10000000};
 
-    ringDim = (_size == InstanceSize::TOY) ? 1024 : 65536;
+    ringDim = 1 << 14;
     vecSize = vecSizes[int(_size)];
   }
 
@@ -50,9 +58,7 @@ public:
   // an object is constrcuted these parameters cannot be modified.
   const InstanceSize getSize() const { return size; }
   int getRingDim() const { return ringDim; }
-  int getNSlots() const {
-    return ringDim / 2;
-  } // # of plaintext slots // TODO: fix it
+  int getZSlots() const { return ringDim / 64; }
   int getVecSize() const { return vecSize; }
 
   // Directory structure: each submission to the fetch-by-similarity
@@ -83,8 +89,9 @@ public:
   // The relevant directories where things are found
   fs::path rtdir() const { return rootdir; }
   fs::path iodir() const { return rootdir / "io" / instance_name(size); }
-  fs::path keydir() const { return iodir() / "keys"; }
-  fs::path encdir() const { return iodir() / "ciphertexts_upload"; }
+  fs::path secretkeydir() const { return iodir() / "secret_keys"; }
+  fs::path publickeydir() const { return iodir() / "public_keys"; }
+  fs::path uploaddir() const { return iodir() / "ciphertexts_upload"; }
   fs::path downloaddir() const { return iodir() / "ciphertexts_download"; }
   fs::path outputdir() const { return iodir() / "cleartext_output"; }
   fs::path datadir() const {
