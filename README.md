@@ -2,9 +2,9 @@
 
 This is a submission for the FHE benchmarking suite using the GZ26 scheme descripted in the paper [FHE for SIMD Arithmetic Logic Units with Amortized O(1) Bootstrapping per Ciphertext](https://eprint.iacr.org/2026/233) which is especially suitable for SIMD execution of int64 arithmetic and boolean operations.
 
-The scheme supports *leveled* arithmetic with exact correctness. Given the task is one multiplication of two int64 vectors, this submission instantiates the GZ26 scheme in a *leveled* manner (i.e., not fully), with ring dimension of `2 ** 13` and four 30-bit primes in the moduli chain. Together with two 40-bit auxiliary moduli, the total `log(QP)=201` and this satisfies *128-bit security* as recommended in [Security Guideline](https://eprint.iacr.org/2024/463). The secret key distribution is UNIFORM TERNARY. The only evaluation key is the relinearization key.
+The scheme supports *leveled* arithmetic with exact correctness. Given the task is one multiplication of two int64 vectors, this submission instantiates the GZ26 scheme in a *leveled* manner (i.e., not fully), with ring dimension of `2 ** 13` and four 30-bit primes in the moduli chain. Together with two 40-bit auxiliary moduli, the total `log(QP)=201` and this satisfies *128-bit security* as recommended in the [Security Guideline](https://eprint.iacr.org/2024/463). The secret key distribution is UNIFORM TERNARY. The only evaluation key is the relinearization key.
 
-In more detail, each ciphertext contains `2 ** 13/64 = 128` numbers of 64-bit integer, and the modulus switching after the multiplication consumes 2 primes. We need 2 remaining primes in total to represent the arithmetic overflow in `mathcal{Z}` (See paper), as otherwise the message will be corrupted.
+In more detail, each ciphertext contains `(2 ** 13)/64 = 128` numbers of 64-bit integer, and the modulus switching after the multiplication consumes 2 primes. We need 2 remaining primes in total to represent the arithmetic overflow in `mathcal{Z}` (See paper), as otherwise the message will be corrupted.
 
 ## Installation
 
@@ -27,6 +27,7 @@ The experiments are conducted in EC2 i7ie.24xl, with 96 vCPU of 5th-gen Intel Xe
 | Single   |  0.1s    | 3.5M      | 0.5s |
 | Small   |  0.12s    | 12.3M      | 0.6s |
 | Medium   |  4.8s    | 984M      | 16.3s |
+| Medium   |  468s    | 95.8G      | 15.8s |
 
 As the encoding function involves some (naive implementation of) matrix multiplication and fourier transform, more than half of the time is spend on encoding/decoding and (de-)serialization. The *useful* homomorphic computation time is one keyswitch per ciphertext, and it is relatively cheap.
 
