@@ -18,9 +18,17 @@ Using `clang` is recommended but not mandatory.
 
 To run the harness, please make sure `scripts/get_openfhe.sh` is run first.
 
-## Performance Overview
+## Performance
 
-TODO
+The experiments are conducted in EC2 i7ie.24xl, with 96 vCPU of 5th-gen Intel Xeon (Emerald Rapids). The backend for the code is CPU with AVX512 acceleration using HEXL.
+
+| Instance | Timing (Server Compute) | Bandwidth | Timing (Overall) |
+|:--------:|:-----------------------:|:---------:|:----------------:|
+| Single   |  0.1s    | 3.5M      | 0.5s |
+| Small   |  0.12s    | 12.3M      | 0.6s |
+| Medium   |  4.8s    | 984M      | 16.3s |
+
+As the encoding function involves some (naive implementation of) matrix multiplication and fourier transform, more than half of the time is spend on encoding/decoding and (de-)serialization. The *useful* homomorphic computation time is one keyswitch per ciphertext, and it is relatively cheap.
 
 # FHE Benchmarking Suite - 64-bits multiplication
 

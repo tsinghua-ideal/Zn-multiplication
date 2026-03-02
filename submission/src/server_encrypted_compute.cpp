@@ -116,6 +116,8 @@ int main(int argc, char *argv[]) {
   log_step(0, "Loading keys");
 
   std::vector<Ciphertext<DCRTPoly>> lhsCts(numCts), rhsCts(numCts);
+#pragma omp parallel for num_threads(                                          \
+        OpenFHEParallelControls.GetThreadLimit(numCts))
   for (size_t i = 0; i < numCts; i++) {
     auto lhs_name =
         prms.uploaddir() / (std::string("lhs-") + std::to_string(i) + ".bin");
@@ -162,6 +164,8 @@ int main(int argc, char *argv[]) {
 
   std::filesystem::create_directories(prms.downloaddir());
 
+#pragma omp parallel for num_threads(                                          \
+        OpenFHEParallelControls.GetThreadLimit(numCts))
   for (size_t i = 0; i < numCts; i++) {
     auto ctRes = result[i];
     std::string out_fname = prms.downloaddir() / (std::string("result-") +
