@@ -50,7 +50,8 @@ public:
     // parameters for sizes:       single  small   medium      large
     static const int vecSizes[] = {1, 1000, 100000, 10000000};
 
-    ringDim = 1 << 14;
+    // Manual Ring Dim selection
+    ringDim = 1 << 13;
     vecSize = vecSizes[int(_size)];
   }
 

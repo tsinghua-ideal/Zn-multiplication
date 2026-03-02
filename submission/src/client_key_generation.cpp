@@ -72,9 +72,9 @@ KeyPair<DCRTPoly> key_gen(const InstanceParams &prms) {
   cParams.SetRingDim(prms.getRingDim());
   cParams.SetSecurityLevel(HEStd_128_classic);
   cParams.SetScalingTechnique(FLEXIBLEMANUAL);
-  cParams.SetScalingModSize(43);
-  cParams.SetFirstModSize(43);
-  AUXMODSIZE_FLEXIBLEMANUAL = 50;
+  cParams.SetScalingModSize(30);
+  cParams.SetFirstModSize(30);
+  AUXMODSIZE_FLEXIBLEMANUAL = 40;
   CryptoContext<DCRTPoly> cc = GenCryptoContext(cParams);
 
   // Enable features that you wish to use
@@ -85,5 +85,25 @@ KeyPair<DCRTPoly> key_gen(const InstanceParams &prms) {
 
   auto keyPair = cc->KeyGen();           // secret/public keys
   cc->EvalMultKeyGen(keyPair.secretKey); // re-linearization key
+
+  // Print some info about the generated keys and parameters
+
+  uint32_t ringDim = cc->GetRingDimension();
+  std::cout << std::get<0>(getCurrentTimeFormatted())
+            << " [client] Ring dimension: " << ringDim << "\n";
+  const auto cryptoParams = std::dynamic_pointer_cast<CryptoParametersCKKSRNS>(
+      cc->GetCryptoParameters());
+  auto moduliQ = cc->GetCryptoParameters()->GetElementParams()->GetModulus();
+  auto moduliP = cryptoParams->GetParamsP()->GetModulus();
+  auto logQ = moduliQ.GetMSB();
+  auto logP = moduliP.GetMSB();
+  std::cout << std::get<0>(getCurrentTimeFormatted())
+            << " [client] log2(Q) = " << logQ << " log2(P) = " << logP
+            << " log2(QP) = " << logQ + logP << std::endl;
+
+  std::cout << std::get<0>(getCurrentTimeFormatted())
+            << " [client] Number of int64 in one ciphertext: "
+            << prms.getZSlots() << std::endl;
+
   return keyPair;
 }

@@ -78,6 +78,10 @@ int main(int argc, char *argv[]) {
                 // set zSlots to 1 to avoid unnecessary padding
   }
 
+  std::cout << std::get<0>(getCurrentTimeFormatted())
+            << " [client] Number of ciphertexts to generate for lhs (or rhs): "
+            << numCts << std::endl;
+
   auto zN = prms.getZN();
   ZLinearTransform::Initialize(zN);
   // Server: for MultFull, we also need to initialize for (zN * 2, zN / 2)

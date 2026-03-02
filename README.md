@@ -2,19 +2,25 @@
 
 This is a submission for the FHE benchmarking suite using the GZ26 scheme descripted in the paper [FHE for SIMD Arithmetic Logic Units with Amortized O(1) Bootstrapping per Ciphertext](https://eprint.iacr.org/2026/233) which is especially suitable for SIMD execution of int64 arithmetic and boolean operations.
 
-The scheme supports *leveled* arithmetic with exact correctness. Given the task is one level of multiplication, this submission instantiates the GZ26 scheme in a *leveled* manner (i.e., not fully), with ring dimension of `2 ** 14` and four 43-bit primes in the moduli chain. Together with the auxiliary moduli, this satisfies 128-bit security. The only evaluation key is the relinearization key.
+The scheme supports *leveled* arithmetic with exact correctness. Given the task is one multiplication of two int64 vectors, this submission instantiates the GZ26 scheme in a *leveled* manner (i.e., not fully), with ring dimension of `2 ** 13` and four 30-bit primes in the moduli chain. Together with two 40-bit auxiliary moduli, the total `log(QP)=201` and this satisfies *128-bit security* as recommended in [Security Guideline](https://eprint.iacr.org/2024/463). The secret key distribution is UNIFORM TERNARY. The only evaluation key is the relinearization key.
 
-To run the harness, please make sure `scripts/get_openfhe.sh` is run first.
+In more detail, each ciphertext contains `2 ** 13/64 = 128` numbers of 64-bit integer, and the modulus switching after the multiplication consumes 2 primes. We need 2 remaining primes in total to represent the arithmetic overflow in `mathcal{Z}` (See paper), as otherwise the message will be corrupted.
 
 ## Installation
 
 We enable OpenMP, NTL, tcmalloc and HEXL in OpenFHE.
 
-```
+```bash
 sudo apt install build-essential git libntl-dev libgmp-dev cmake autoconf libtool clang libomp5 libomp-dev
 ```
 
 Using `clang` is recommended but not mandatory.
+
+To run the harness, please make sure `scripts/get_openfhe.sh` is run first.
+
+## Performance Overview
+
+TODO
 
 # FHE Benchmarking Suite - 64-bits multiplication
 
