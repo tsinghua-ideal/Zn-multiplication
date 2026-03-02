@@ -60,6 +60,8 @@ int main(int argc, char *argv[]) {
 
   std::vector<uint64_t> decoded(prms.getVecSize());
 
+#pragma omp parallel for num_threads(                                          \
+        OpenFHEParallelControls.GetThreadLimit(numCts))
   for (size_t i = 0; i != numCts; i++) {
     // Read the encrypted answer from disk
     Ciphertext<DCRTPoly> ct;

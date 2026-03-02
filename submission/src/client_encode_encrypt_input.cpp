@@ -91,6 +91,8 @@ int main(int argc, char *argv[]) {
   UserZ u = std::make_shared<UserZImpl>(z);
   PKEZ pkeZ = std::make_shared<PKEZImpl>(pk);
 
+#pragma omp parallel for num_threads(                                          \
+        OpenFHEParallelControls.GetThreadLimit(numCts))
   for (size_t i = 0; i < numCts; i++) {
     std::vector<uint64_t> lhsInner(zSlots), rhsInner(zSlots);
 
