@@ -16,11 +16,24 @@ sudo apt install build-essential git libntl-dev libgmp-dev cmake autoconf libtoo
 
 Using `clang` is recommended but not mandatory.
 
-To run the harness, please make sure `scripts/get_openfhe.sh` is run first.
+Then we install (a fork of) openfhe as follows
+
+```bash
+bash ./scripts/get_openfhe.sh
+```
+
+To run the harness, one example command line is
+
+```bash
+python3 ./harness/run_submission.py 0 --num_runs 3
+```
+where 0 stands for single, 1 stands for small, medium stands for medium and 3 stands for large.
+
+Note that the large instance takes 100G disk and 100G RAM.
 
 ## Performance
 
-The experiments are conducted in EC2 i7ie.24xl, with 96 vCPU of 5th-gen Intel Xeon (Emerald Rapids). The backend based on OpenFHE uses CPU with HEXL AVX512 acceleration.
+The experiments are conducted in EC2 i7ie.24xl, with 96 vCPU of 5th-gen Intel Xeon (Emerald Rapids). The backend is based on OpenFHE and uses CPU with HEXL AVX512 acceleration.
 
 | Instance | Timing (Server Compute) | Bandwidth | Timing (Overall) |
 |:--------:|:-----------------------:|:---------:|:----------------:|
