@@ -27,7 +27,7 @@ To run the harness, one example command line is
 ```bash
 python3 ./harness/run_submission.py 0 --num_runs 3
 ```
-where 0 stands for single, 1 stands for small, medium stands for medium and 3 stands for large.
+where 0 stands for single, 1 stands for small, 2 stands for medium and 3 stands for large.
 
 Note that the large instance takes 100G disk and 100G RAM.
 
